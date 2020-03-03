@@ -1,12 +1,16 @@
+
 var json = "none";
 var page = 0;
 var obj;
 var app;
 var pages;
+var pub_int = []
+var pub_int_cnt = 0
 
 function make(){
     obj = JSON.parse(json);
     app = obj.app;
+    ID = obj.ID;
     pages = obj.menu.length;
     menu();
     content();
@@ -47,11 +51,17 @@ function menu(){
         else current = false;
         content += menu_item(obj.menu[i], current, i);
     }
-    content += "</ul></div>";
+    content += "<br><br>";
+    content += "<p>&nbsp&nbspID:&nbsp<b>" + ID + "</b><p>";
+    content += "</ul>";
+    content += "</div>";
     document.getElementById("menu").innerHTML = content;
 }
 
 function content(){
+    for(var i = 0; i < pub_int_cnt; i++){
+        clearInterval(pub_int[i])
+    }
     document.getElementById("main").innerHTML = "";
     var content = "<div class=\"header\"><h1>" + obj.menu[page] + "</h1></div>";
     content += "<div class=\"content\">";
@@ -72,69 +82,87 @@ function content(){
 }
 
 function content_item(item, i){
+    var content = ''
+    if(item.type == "pub"){
+        content += "<div class=\"pure-u-1\" style=\"background-color: " + item.bg_color + "; text-align: center; color: " + item.text_color + ";\">"
+        if(item.label != "") content += "<h2>" + item.label + "</h2>"
+        content += "<p style=\"font-size: 32pt\" id=\"" + item.id + "\">" + item.value + item.unit + "</p>"
+        content += "</div>"
+        pub_int[pub_int_cnt] = setInterval(function () {
+            pub(item.id, item.value, item.unit);
+        }, 3000);
+        pub_int_cnt++
+        return content
+    }
 
+    content += "<div class=\"pure-u-1\">";
 
-    var content = "<div class=\"pure-u-1 pure-u-md-1-3\">";
+    if (item.type == "checkbox"){
+        content += "<br>"
+        content += "<div style=\"height: 40px;\">"
+        content += "<input "
+        if (typeof item.type == 'string') content += "type=\"" + item.type + "\""
+        if (typeof item.id == 'string') content += "id=\"" + item.id + "\""
+        if (typeof item.value == 'string' && item.value == "true") content += " checked "
+        content += "class='checkbox' onclick=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
+        content += "<label class='switch' for='" + item.id +  "'>"
+        content +=  "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp" + item.label
+        content +=  "</label></input>"
+        content += "</div>";
+    }
+    else if(item.html == "input"){
+        content += "<label id=\"" + item.id + "-val\">" + item.label + " "
+        if(item.type == "text" || item.type == "password") content += "(" + item.value.length + ")"
+        else content += item.value
+        content +=  "</label>";
+        content += "<input ";
+        if (typeof item.type == 'string') content += "type=\"" + item.type + "\"";
+        if (typeof item.id == 'string') content += "id=\"" + item.id + "\"";
+        if (typeof item.name == 'string') content += "name=\"" + item.name + "\"";
+        if (typeof item.min == 'string') content += "min=\"" + item.min + "\"";
+        if (typeof item.max == 'string') content += "max=\"" + item.max + "\"";
+        if (typeof item.step == 'string') content += "step=\"" + item.step + "\"";
+        if (typeof item.value == 'string') content += "value=\"" + item.value + "\"";
+        if (typeof item.placeholder == 'string') content += "placeholder=\"" + item.placeholder + "\"";
+        content += "class=\"pure-u-5-5\""
 
-    var html = item.html;
+        if(item.type == "range"){
+            content += "onchange=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
+        }
 
-    if (html == "input" && item.type == 'range') content += "<label id=\"" + item.id + "-val\">" + item.label + " " + item.value + "</label>";
-    else if (item.type == "checkbox") content += "<label class=\"pure-checkbox\">";
-    else if (html == "button") content += "<br>";
-    else  content += "<label id=\"" + item.id + "-val\">" + item.label + "</label>";
+        if(item.type == "text" || item.type == "password" || item.type == "number" || item.type == "time" || item.type == "date" || item.type == "datetime-local"){
+            content += "oninput=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
+        }
 
+        if(item.type == "color"){
+            content += "style=\"height: 50px\" oninput=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
+        }
 
-
-    switch (html) {
-        case "input":
-            content += "<input ";
-            if (typeof item.type == 'string') content += "type=\"" + item.type + "\"";
-            if (typeof item.id == 'string') content += "id=\"" + item.id + "\"";
-            if (typeof item.name == 'string') content += "name=\"" + item.name + "\"";
-            if (typeof item.min == 'string') content += "min=\"" + item.min + "\"";
-            if (typeof item.max == 'string') content += "max=\"" + item.max + "\"";
-            if (typeof item.step == 'string') content += "step=\"" + item.step + "\"";
-            if (typeof item.value == 'string') content += "value=\"" + item.value + "\"";
-            if (typeof item.placeholder == 'string') content += "placeholder=\"" + item.placeholder + "\"";
-
-            if (item.type != "checkbox") content += "class=\"pure-u-24-24\" maxlength=\"255\"";
-            if (item.type == "checkbox" && item.value == 'true') content += " checked ";
-
-            if (item.type != "range") content += "oninput=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\"";
-            if (item.type == "range") content += "oninput=\"datarange(this.id, this.value, '" + item.label + "')\" onchange=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\"";
-            content += ">";
-
-            if (item.type == "checkbox") content += "&nbsp" + item.label + "</label>";
-            break;
-
-        case "select":
-            content += "<select ";
-            if (typeof item.id == 'string') content += "id=\"" + item.id + "\"";
-            if (typeof item.name == 'string') content += "name=\"" + item.name + "\"";
-            if (typeof item.value == 'string') content += "value=\"" + item.value + "\"";
-            content += "class=\"pure-u-24-24\"";
-            content += "oninput=\"data(" + item.type + ", this.id, this.value, '" + item.label + "', '" + page + "', '" + i + "')\"";
-            content += ">";
-            for(var i = 0; i < item.options.length; i++){
-                if (item.options[i].value == item.value) content += "<option value=\"" + item.options[i].value + "\" selected>";
-                else content += "<option value=\"" + item.options[i].value + "\">";
-                content += item.options[i].label;
-                content += "</option >";
-            }
-            content += "</select>";
-            break;
-
-            case "button":
-                    content += "<input type=\"button\" ";
-                    content += "id=\"" + item.id + "\" value=\"" + item.label + "\" class=\"pure-button pure-button-primary\" onclick=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
-                    //content += item.label;
-                    //content += "</button>";
-
-
-                    break;
-    
-        default:
-            break;
+    }
+    if(item.html == "button"){
+        if (typeof item.color != 'string') item.color = ''
+        content += "<br>";
+        content += "<input type=\"button\" ";
+        content += "id=\"" + item.id + "\" style=\"background-color: " + item.color + "\" value=\"" + item.label + "\" class=\"pure-u-5-5 pure-button pure-button-primary\" onclick=\"data('" + item.type + "', 'BTN_' + this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
+    }
+    if(item.html == "textarea"){
+        content += "<textarea class=\"pure-u-24-24\" maxlength=\"255\" id=\"" + item.id + "\" oninput=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">" + item.value + "</textarea>";
+    }
+    if(item.html == "select"){
+        content += "<label id=\"" + item.id + "-val\">" + item.label + "</label>";
+        content += "<select ";
+        if (typeof item.id == 'string') content += "id=\"" + item.id + "\"";
+        if (typeof item.name == 'string') content += "name=\"" + item.name + "\"";
+        if (typeof item.value == 'string') content += "value=\"" + item.value + "\"";
+        content += "class=\"pure-u-5-5\"";
+        content += "onchange=\"data(" + item.type + ", this.id, this.value, '" + item.label + "', '" + page + "', '" + i + "')\">";
+        for(var i = 0; i < item.options.length; i++){
+            if (item.options[i].value == item.value) content += "<option value=\"" + item.options[i].value + "\" selected>";
+            else content += "<option value=\"" + item.options[i].value + "\">";
+            content += item.options[i].label;
+            content += "</option >";
+        }
+        content += "</select>";
     }
     content += "</div>";
     return content;
@@ -146,7 +174,7 @@ function datarange(id, value, label){
 
 function data(type, id, value, label, page, i){
     if (type == "range") document.getElementById(id + "-val").innerHTML = label + ":&nbsp" + value;
-    if (type == "text") document.getElementById(id + "-val").innerHTML = label + "&nbsp(" + value.length + ")";
+    if (type == "text" || type == "password") document.getElementById(id + "-val").innerHTML = label + "&nbsp(" + value.length + ")";
 
     if (type == "checkbox"){
         var chbox=document.getElementById(id);
@@ -167,3 +195,30 @@ function send(id, value){
     };
     xhr.send(formData);
 }
+
+function pub(id, value, unit){
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/pub?' + id + '=' + value);
+    xhr.onload = function () {
+        document.getElementById(id).innerHTML = xhr.responseText + unit;
+    };
+    xhr.send();
+}
+<!-- -->
+document.addEventListener("DOMContentLoaded", function () {
+  parse();
+  var timerId = setInterval(function () {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/_refresh', true);
+    xhr.onload = function () {
+        var res = xhr.responseText;
+        var needRefresh = JSON.parse(res);
+        if(needRefresh._refresh == "1"){
+            parse();
+            console.log(needRefresh);
+        }
+    };
+    xhr.send(null);
+  }, 1000);
+});
+<!-- -->

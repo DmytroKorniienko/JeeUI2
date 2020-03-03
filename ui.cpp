@@ -1,11 +1,11 @@
 #include "JeeUI2.h"
 
 
-void jeeui2::pub(String id, String label, String unit, String bg_color, String text_color){
+void jeeui2::pub(String id, String label, String value, String unit, String bg_color, String text_color){
 
     buf += String(F("{\"id\":\"")) + id + "\",";
     buf += F("\"type\":\"pub\",");
-    buf += String(F("\"value\":\"")) + "\",";
+    buf += String(F("\"value\":\"")) + value + "\",";
     buf += String(F("\"bg_color\":\"")) + bg_color + "\",";
     buf += String(F("\"text_color\":\"")) + text_color + "\",";
     buf += String(F("\"label\":\"")) + label + "\",";
@@ -16,16 +16,20 @@ void jeeui2::pub(String id, String label, String unit, String bg_color, String t
     pub_transport[id] = "";
 }
 
-void jeeui2::pub(String id, String label, String unit, String bg_color){
-    pub(id, label, unit, bg_color, F("#ffffff"));
+void jeeui2::pub(String id, String label, String value, String unit, String bg_color){
+    pub(id, label, value, unit, bg_color, F("#ffffff"));
 }
 
-void jeeui2::pub(String id, String label, String unit){
-    pub(id, label, unit, F("#6060ff"), F("#ffffff"));
+void jeeui2::pub(String id, String label, String value, String unit){
+    pub(id, label, value, unit, F("#6060ff"), F("#ffffff"));
+}
+
+void jeeui2::pub(String id, String label, String value){
+    pub(id, label, value, F(""), F("#6060ff"), F("#ffffff"));
 }
 
 void jeeui2::pub(String id, String label){
-    pub(id, label, "", F("#6060ff"), F("#ffffff"));
+    pub(id, label, F(""), F(""), F("#6060ff"), F("#ffffff"));
 }
 
 void jeeui2::formMqtt(){
@@ -47,6 +51,8 @@ void jeeui2::app(String name){
     btn_num = 0;
     mn = 0;
     pg = 0;
+    op = "";
+
     buf = String(F("{\"app\":\"")) + name + "\",";
     buf += String(F("\"ID\":\"")) + mc + "\",";
 }
@@ -134,7 +140,6 @@ void jeeui2::select(String id, String label){
 
     int lastIndex = op.length() - 1;
     op.remove(lastIndex);
-
     buf += F("{\"html\":\"select\",");
     buf += String(F("\"id\":\"")) + id + "\",";
     buf += String(F("\"value\":\"")) + param(id) + "\",";

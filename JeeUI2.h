@@ -27,9 +27,9 @@
 
 class jeeui2
 {
-    StaticJsonDocument<8192> cfg;
-    StaticJsonDocument<128> pub_transport;
-    StaticJsonDocument<128> btn_transport;
+    StaticJsonDocument<4096> cfg;
+    StaticJsonDocument<96> pub_transport;
+    StaticJsonDocument<96> btn_transport;
     AsyncMqttClient mqttClient;
 
     typedef void (*buttonCallback) ();
@@ -71,9 +71,10 @@ class jeeui2
     void udp(String message);
     void udp();
     void pub(String id, String label);
-    void pub(String id, String label, String unit);
-    void pub(String id, String label, String unit, String bg_color);
-    void pub(String id, String label, String unit, String bg_color, String text_color);
+    void pub(String id, String label, String value);
+    void pub(String id, String label, String value, String unit);
+    void pub(String id, String label, String value, String unit, String bg_color);
+    void pub(String id, String label, String value, String unit, String bg_color, String text_color);
     void formWifi();
     void formMqtt();
 
@@ -107,6 +108,7 @@ class jeeui2
     String buf;
     String mc;
     String mac;
+    bool _refresh = false;
     bool connected = false;
     
 
@@ -191,8 +193,6 @@ class jeeui2
     static void onMqttPublish(uint16_t packetId);
     static void _onMqttConnect(bool sessionPresent);
     void check_wifi_state();
-
-
 };
 
 #endif

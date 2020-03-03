@@ -14,13 +14,13 @@ void jeeui2::led_handle()
 
 void jeeui2::btnCallback(String name, buttonCallback response)
 {
-    if (name == "GPIO0" && !digitalRead(BUTTON)){
+    if (name == F("GPIO0") && !digitalRead(BUTTON)){
         response();
         btn();
     }
 
     if (btnui == name){
-        btnui = "";
+        btnui = F("");
         response();
     }
 }
@@ -53,16 +53,16 @@ void jeeui2::btn()
         if (t + 15000 < millis()) // Нажатие 10 секунд
         {
             led_inv();
-            SPIFFS.remove("/config.json");
+            SPIFFS.remove(F("/config.json"));
             ESP.restart();
         }
     }
     if (wifi_mode != old_wifi_mode) // событие после отпуска кнопки от 5 секунд
     {
         if (wifi_mode == 1)
-            var("wifi", "AP");
+            var(F("wifi"), F("AP"));
         if (wifi_mode == 2)
-            var("wifi", "STA");
+            var(F("wifi"), F("STA"));
             // тут сохранить настройки
         wifi_connect();
         //ESP.restart();

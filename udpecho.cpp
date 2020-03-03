@@ -15,7 +15,7 @@ void jeeui2::udp(String message){
 
 void jeeui2::udpBegin(){
     Udp.begin(localUdpPort);
-    if(udpMessage != "") udpApply = true;
+    if(udpMessage != F("")) udpApply = true;
 }
 
 void jeeui2::udpLoop(){
@@ -31,18 +31,18 @@ void jeeui2::udpLoop(){
     if (packetSize)
     {
         udpRemoteIP = Udp.remoteIP().toString();
-        if(dbg)Serial.printf("Received %d bytes from %s, port %d\n", packetSize, udpRemoteIP.c_str(), Udp.remotePort());
+        if(dbg)Serial.printf(PSTR("Received %d bytes from %s, port %d\n"), packetSize, udpRemoteIP.c_str(), Udp.remotePort());
         int len = Udp.read(incomingPacket, 64);
         if (len > 0)
         {
         incomingPacket[len] = 0;
         }
-        if(dbg)Serial.printf("UDP packet contents: %s\n", incomingPacket);
+        if(dbg)Serial.printf(PSTR("UDP packet contents: %s\n"), incomingPacket);
 
         // send back a reply, to the IP address and port we got the packet from
         Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
         //Udp.write(ip.c_str());
-        if(dbg)Serial.println("Send UDP: " + udpMessage);
+        if(dbg)Serial.println(String(F("Send UDP: ")) + udpMessage);
         Udp.print(udpMessage);
         Udp.endPacket();
     }

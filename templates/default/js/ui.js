@@ -1,6 +1,6 @@
 
 
-// ------------------- ΠΠµΠ½Ρ -------------------
+// ------------------- Μενώ -------------------
 (function (window, document) {
 
     var layout   = document.getElementById('layout'),

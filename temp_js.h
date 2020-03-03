@@ -89,8 +89,8 @@ function content_item(item, i){
         if(item.label != "") content += "<h2>" + item.label + "</h2>"
         content += "<p style=\"font-size: 32pt\" id=\"" + item.id + "\">" + item.value + item.unit + "</p>"
         content += "</div>"
-        pub_int[pub_int_cnt] = setInterval(() => {
-            pub(item.id, item.unit)
+        pub_int[pub_int_cnt] = setInterval(function () {
+            pub(item.id, item.unit);
         }, 3000);
         pub_int_cnt++
         return content
@@ -105,10 +105,10 @@ function content_item(item, i){
         if (typeof item.type == 'string') content += "type=\"" + item.type + "\""
         if (typeof item.id == 'string') content += "id=\"" + item.id + "\""
         if (typeof item.value == 'string' && item.value == "true") content += " checked "
-        content += "class='checkbox' oninput=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
+        content += "class='checkbox' onclick=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
         content += "<label class='switch' for='" + item.id +  "'>"
         content +=  "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp" + item.label
-        content +=  "</label>"
+        content +=  "</label></input>"
         content += "</div>";
     }
     else if(item.html == "input"){
@@ -128,7 +128,7 @@ function content_item(item, i){
         content += "class=\"pure-u-5-5\""
 
         if(item.type == "range"){
-            content += "oninput=\"datarange(this.id, this.value, '" + item.label + "')\" onchange=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
+            content += "onchange=\"data('" + item.type + "', this.id, this.value, '" + item.label + "', " + page + ", " + i + ")\">";
         }
 
         if(item.type == "text" || item.type == "password" || item.type == "number" || item.type == "time" || item.type == "date" || item.type == "datetime-local"){
@@ -156,7 +156,7 @@ function content_item(item, i){
         if (typeof item.name == 'string') content += "name=\"" + item.name + "\"";
         if (typeof item.value == 'string') content += "value=\"" + item.value + "\"";
         content += "class=\"pure-u-5-5\"";
-        content += "oninput=\"data(" + item.type + ", this.id, this.value, '" + item.label + "', '" + page + "', '" + i + "')\">";
+        content += "onchange=\"data(" + item.type + ", this.id, this.value, '" + item.label + "', '" + page + "', '" + i + "')\">";
         for(var i = 0; i < item.options.length; i++){
             if (item.options[i].value == item.value) content += "<option value=\"" + item.options[i].value + "\" selected>";
             else content += "<option value=\"" + item.options[i].value + "\">";
@@ -205,6 +205,22 @@ function pub(id, unit){
     };
     xhr.send();
 }
-
-
+<!-- -->
+document.addEventListener("DOMContentLoaded", function () {
+  parse();
+  var timerId = setInterval(function () {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/_refresh', true);
+    xhr.onload = function () {
+        var res = xhr.responseText;
+        var needRefresh = JSON.parse(res);
+        if(needRefresh._refresh == "1"){
+            parse();
+            console.log(needRefresh);
+        }
+    };
+    xhr.send(null);
+  }, 1000);
+});
+<!-- -->
 )=====";

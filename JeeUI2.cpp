@@ -6,16 +6,16 @@
 
 #include "JeeUI2.h"
 
-#include "pge.h"
-#include "stl.h"
-#include "mnu.h"
-#include "rng.h"
-#include "mkr.h"
-#include "mui.h"
-#include "grids.h"
-#include "chk.h"
+//#include "pge.h"
+//#include "stl.h" // + favicon
+//#include "mnu.h"
+//#include "rng.h"
+//#include "mkr.h"
+//#include "mui.h"
+//#include "grids.h"
+//#include "chk.h"
 
-#include "temp_js.h"
+//#include "temp_js.h"
 
 AsyncWebServer server(80);
 
@@ -25,26 +25,26 @@ void jeeui2::var(String key, String value)
         JsonVariant pub_key = pub_transport[key];
         if (!pub_key.isNull()) {
             pub_transport[key] = value;
-            if(dbg)Serial.println("Pub: [" + key + " - " + value + "]");
+            if(dbg)Serial.printf_P(PSTR("Pub: [%s - %s]"), key.c_str(), value.c_str());
             pub_mqtt(key, value);
             String tmp;
             serializeJson(pub_transport, tmp);
             deserializeJson(pub_transport, tmp);
-            tmp = "";
+            tmp = F("");
             return;
         }
     }
-    if(rc)publish("jee/set/" + key, value, true);
-    if(dbg)Serial.print("WRITE: ");
-    if(dbg)Serial.println("key (" + key + String(F(") value (")) + value.substring(0, 15) + String(F(") RAM: ")) + ESP.getFreeHeap());
+    if(rc)publish(String(F("jee/set/")) + key, value, true);
+    if(dbg)Serial.print(F("WRITE: "));
+    if(dbg)Serial.printf_P(PSTR("key (%s) value (%s) RAM: %d\n"), key.c_str(), value.substring(0, 15).c_str(), ESP.getFreeHeap());
     cfg[key] = value;
 } 
 
 String jeeui2::param(String key) 
 { 
     String value = cfg[key];
-    if(dbg)Serial.print("READ: ");
-    if(dbg)Serial.println("key (" + key + String(F(") value (")) + value + ")");
+    if(dbg)Serial.print(F("READ: "));
+    if(dbg)Serial.println(String(F("key (")) + key + String(F(") value (")) + value + String(F(")")));
     return value;
 } 
 
@@ -59,25 +59,30 @@ void jeeui2::begin(bool debug) {
     dbg = debug;
     nonWifiVar();
     load();
-    if(dbg)Serial.println("CONFIG: " + deb());
+    if(dbg)Serial.println(String(F("CONFIG: ")) + deb());
     begin();
-    if(dbg)Serial.println("RAM: " + String(ESP.getFreeHeap()));
-    if(dbg)Serial.println("MAC: " + mac);
+    if(dbg)Serial.println(String(F("RAM: ")) + String(ESP.getFreeHeap()));
+    if(dbg)Serial.println(String(F("MAC: ")) + mac);
+}
+
+void notFound(AsyncWebServerRequest *request) {
+    request->send(404, F("text/plain"), F("Not found"));
 }
 
 void jeeui2::begin() { 
     
     wifi_connect();
-    server.on("/post", HTTP_ANY, [this](AsyncWebServerRequest *request) {
+
+    server.on(PSTR("/post"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
         uint8_t params = request->params();
         AsyncWebParameter *p;
         for (uint8_t i = 0; i < params; i++)
         {
           p = request->getParam(i);
-          if (p->name().indexOf("BTN_") != -1){
+          if (p->name().indexOf(F("BTN_")) != -1){
                 btnui = p->name().substring(4, p->name().length());
-                if(btnui == "bWF"){
-                    var("wifi", "STA");
+                if(btnui == F("bWF")){
+                    var(F("wifi"), F("STA"));
                     save();
                     ESP.restart();
                 }
@@ -90,76 +95,157 @@ void jeeui2::begin() {
         request->send(200, F("text/plain"), F("OK"));
     });
 
-    server.on("/pub", HTTP_ANY, [this](AsyncWebServerRequest *request) {
+    server.on(PSTR("/pub"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
         AsyncWebParameter *p;
-        String value = "";
+        String value = F("");
         p = request->getParam(0);
         JsonVariant pub_key = pub_transport[p->name()];
         if (!pub_key.isNull()) {
             value = pub_transport[p->name()].as<String>();
-            if(dbg)Serial.println("pub: [" + p->name() + " - " + value + "]");
-
+            if(dbg)Serial.printf_P(PSTR("pub: [%s - %s - %s]\n"),p->name().c_str(), p->value().c_str(), value.c_str());
         }
-        request->send(200, F("text/plain"), value);
+        request->send(200, F("text/plain"), value);//p->value());
     });
 
-    server.on("/echo", HTTP_ANY, [this](AsyncWebServerRequest *request) { 
+    server.on(PSTR("/echo"), HTTP_ANY, [this](AsyncWebServerRequest *request) { 
         foo();
         request->send(200, F("text/plain"), buf);
-        buf = "";
+        buf = F("");
     });
 
-    server.on("/config", HTTP_ANY, [this](AsyncWebServerRequest *request) { 
+    server.on(PSTR("/_refresh"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        static unsigned long echoTm; // сброс только через секунду
+        
+        if(!_refresh)
+            {echoTm = millis();}
+        else if(echoTm+1500<millis()){ // 1.5 секунды при цикле опроса в 1 секунду
+            _refresh = false;
+            echoTm = millis();
+        }
+
+        request->send(200, F("text/plain"), String(F("{\"_refresh\":\"")) + String(_refresh) + F("\"}"));
+    });
+
+    server.on(PSTR("/config"), HTTP_ANY, [this](AsyncWebServerRequest *request) { 
         String config = deb();
         request->send(200, F("text/plain"), config);
-        config = "";
+        config = F("");
     });
 
-    server.on("/js/maker.js", HTTP_ANY, [this](AsyncWebServerRequest *request) {
-        request->send_P(200, F("application/javascript"), temp_js);
-    });
-
-    server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), pge, pge_l);
+    server.on(PSTR("/js/maker.js"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/js/maker.js.gz"), F("application/javascript"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/js/maker.js"), F("application/javascript"));
         request->send(response);
     });
 
-    server.on("/css/pure-min.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), stl, stl_l);
+    //server.serveStatic("/js/maker.js", SPIFFS, "/maker.js.gz");
+    //server.on("/js/maker.js", HTTP_ANY, [this](AsyncWebServerRequest *request) {
+    //    request->send_P(200, F("application/javascript"), temp_js);
+    //});
+
+    // server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    //     //AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), pge, pge_l);
+    //     //response->addHeader(F("Content-Encoding"), F("gzip"));
+    //     //request->send(response);
+    //     //request->send_P(200, F("text/plain"), pge_txt);
+    //     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), pge_txt);
+    //     request->send(response);
+    // });
+    server.on(PSTR("/"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/index.html.gz"), F("text/html"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/index.html"), F("text/html"));
         request->send(response);
     });
 
-    server.on("/css/side-menu.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), mnu, mnu_l);
+    // server.on("/css/pure-min.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    //     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), stl, stl_l);
+    //     response->addHeader(F("Content-Encoding"), F("gzip"));
+    //     request->send(response);
+    // });
+    server.on(PSTR("/css/pure-min.css"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/pure-min.css.gz"), F("text/css"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/pure-min.css"), F("text/css"));
         request->send(response);
     });
 
-    server.on("/css/range.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), rng, rng_l);
+    // server.on("/css/side-menu.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    //     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), mnu, mnu_l);
+    //     response->addHeader(F("Content-Encoding"), F("gzip"));
+    //     request->send(response);
+    // });
+    server.on(PSTR("/css/side-menu.css"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/side-menu.css.gz"), F("text/css"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/side-menu.css"), F("text/css"));
         request->send(response);
     });
 
-    server.on("/grids.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), grids, grids_l);
+    // server.on("/css/range.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    //     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), rng, rng_l);
+    //     response->addHeader(F("Content-Encoding"), F("gzip"));
+    //     request->send(response);
+    // });
+    server.on(PSTR("/css/range.css"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/range.css.gz"), F("text/css"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/range.css"), F("text/css"));
         request->send(response);
     });
 
-    server.on("/chk.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), chk, chk_l);
+    // server.on("/css/grids.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    //     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), grids, grids_l);
+    //     response->addHeader(F("Content-Encoding"), F("gzip"));
+    //     request->send(response);
+    // });
+    server.on(PSTR("/css/grids.css"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/grids.css.gz"), F("text/css"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/grids.css"), F("text/css"));
         request->send(response);
     });
 
-    server.on("/js/ui.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, F("application/javascript"), mui, mui_l);
+    // server.on("/css/chk.css", HTTP_ANY, [](AsyncWebServerRequest *request) {
+    //     AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/css"), chk, chk_l);
+    //     response->addHeader(F("Content-Encoding"), F("gzip"));
+    //     request->send(response);
+    // });
+    server.on(PSTR("/css/chk.css"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        //Serial.println(F("/css/chk.css"));
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/chk.css.gz"), F("text/css"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/css/chk.css"), F("text/css"));
         request->send(response);
     });
+
+    // server.on("/js/ui.js", HTTP_GET, [](AsyncWebServerRequest *request) {
+    //     AsyncWebServerResponse *response = request->beginResponse_P(200, F("application/javascript"), mui, mui_l);
+    //     response->addHeader(F("Content-Encoding"), F("gzip"));
+    //     request->send(response);
+    // });
+    server.on(PSTR("/js/ui.js"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/js/ui.js.gz"), F("application/javascript"));
+        response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/js/ui.js"), F("application/javascript"));
+        request->send(response);
+    });
+
+
+    server.on(PSTR("/favicon.ico"), HTTP_GET, [](AsyncWebServerRequest *request) {
+        AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/favicon.ico.gz"), F("image/x-icon"));
+        response->addHeader(F("Content-Encoding"), F("gzip"));
+        //AsyncWebServerResponse *response = request->beginResponse_P(200, F("image/x-icon"), favicon_ico_gz, favicon_ico_gz_len);
+        request->send(response);
+    });
+
+    server.on(PSTR("/heap"), HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(200, F("text/plain"), String(ESP.getFreeHeap()));
+    });
+
+    server.onNotFound(notFound);
+
     server.begin();
     foo();
     upd();
@@ -204,12 +290,12 @@ void jeeui2::nonWifiVar(){
 }
 
 void jeeui2::getAPmac(){
-    if(mc != "") return;
+    if(mc != F("")) return;
     #ifdef ESP32
     WiFi.mode(WIFI_MODE_AP);
     #else
     WiFi.mode(WIFI_AP);
     #endif
     mc = String(WiFi.softAPmacAddress());
-    mc.replace(":", "");
+    mc.replace(F(":"), F(""));
 }
