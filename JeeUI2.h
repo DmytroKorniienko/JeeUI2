@@ -17,19 +17,29 @@
 
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>        // Include the mDNS library
 #else
 #include <WiFi.h>
+#include <ESPmDNS.h>
+#include <Update.h>
 #endif
 
 #include <AsyncMqttClient.h>
 
-#define BUTTON 0 
+#ifndef __DISABLE_BUTTON0
+#define __BUTTON 0 // Кнопка "FLASH" на NODE_MCU
+#endif
+
+#define __IDPREFIX F("JeeUI2-")
 
 class jeeui2
 {
-    StaticJsonDocument<4096> cfg;
-    StaticJsonDocument<96> pub_transport;
-    StaticJsonDocument<96> btn_transport;
+    DynamicJsonDocument cfg;
+    DynamicJsonDocument pub_transport;
+    DynamicJsonDocument btn_transport;
+    //StaticJsonDocument<4096> cfg;
+    //StaticJsonDocument<96> pub_transport;
+    //StaticJsonDocument<96> btn_transport;
     AsyncMqttClient mqttClient;
 
     typedef void (*buttonCallback) ();
@@ -38,6 +48,8 @@ class jeeui2
     typedef void (*mqttCallback) ();
 
   public:
+    jeeui2() : cfg(4096), pub_transport(96), btn_transport(96) {}
+
     void var(String key, String value);
     String param(String key);
     void led(uint8_t pin, bool invert);
