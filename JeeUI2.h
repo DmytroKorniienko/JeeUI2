@@ -17,6 +17,7 @@
 
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
+//#include <ESP8266WiFiMulti.h>   // Include the Wi-Fi-Multi library
 #include <ESP8266mDNS.h>        // Include the mDNS library
 #else
 #include <WiFi.h>
@@ -30,7 +31,9 @@
 #define __BUTTON 0 // Кнопка "FLASH" на NODE_MCU
 #endif
 
+#ifndef __IDPREFIX
 #define __IDPREFIX F("JeeUI2-")
+#endif
 
 class jeeui2
 {
@@ -48,68 +51,68 @@ class jeeui2
     typedef void (*mqttCallback) ();
 
   public:
-    jeeui2() : cfg(4096), pub_transport(96), btn_transport(96) {}
+    jeeui2() : cfg(3072), pub_transport(256), btn_transport(128) {}
 
-    void var(String key, String value);
-    String param(String key);
+    void var(const String &key, const String &value);
+    String param(const String &key);
     void led(uint8_t pin, bool invert);
     String deb();
     void ap(unsigned long interval);
     void begin();
     void begin(bool debug);
     void handle();
-    void btnCallback(String name ,buttonCallback response);
+    void btnCallback(const String &name ,buttonCallback response);
 
-    void app(String name);
-    void menu(String name);
+    void app(const String &name);
+    void menu(const String &name);
     void page();
 
-    void text(String id, String label);
-    void password(String id, String label);
-    void number(String id, String label);
-    void time(String id, String label);
-    void date(String id, String label);
-    void datetime(String id, String label);
-    void email(String id, String label);
-    void range(String id, int min, int max, float step, String label);
-    void select(String id, String label);
-    void option(String value, String label);
-    void checkbox(String id, String label);
-    void color(String id, String label);
-    void button(String id, String color, String label);
-    void button(String id, String color, String label, int column);
-    void textarea(String id, String label);
+    void text(const String &id, const String &label);
+    void password(const String &id, const String &label);
+    void number(const String &id, const String &label);
+    void time(const String &id, const String &label);
+    void date(const String &id, const String &label);
+    void datetime(const String &id, const String &label);
+    void email(const String &id, const String &label);
+    void range(const String &id, int min, int max, float step, const String &label);
+    void select(const String &id, const String &label);
+    void option(const String &value, const String &label);
+    void checkbox(const String &id, const String &label);
+    void color(const String &id, const String &label);
+    void button(const String &id, const String &color, const String &label);
+    void button(const String &id, const String &color, const String &label, int column);
+    void textarea(const String &id, const String &label);
     void save();
-    void udp(String message);
+    void udp(const String &message);
     void udp();
-    void pub(String id, String label);
-    void pub(String id, String label, String value);
-    void pub(String id, String label, String value, String unit);
-    void pub(String id, String label, String value, String unit, String bg_color);
-    void pub(String id, String label, String value, String unit, String bg_color, String text_color);
+    void pub(const String &id, const String &label);
+    void pub(const String &id, const String &label, const String &value);
+    void pub(const String &id, const String &label, const String &value, const String &unit);
+    void pub(const String &id, const String &label, const String &value, const String &unit, const String &bg_color);
+    void pub(const String &id, const String &label, const String &value, const String &unit, const String &bg_color, const String &text_color);
     void formWifi();
     void formMqtt();
 
     uiCallback foo;
     void ui(void (*uiFunction) ());
 
-    void mqtt(String pref, String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload), bool remotecontrol);
-    void mqtt(String pref, String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload));
-    void mqtt(String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload));
-    void mqtt(String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload), bool remotecontrol);
-    void mqtt(String host, int port, String user, String pass, bool remotecontrol);
-    void mqtt(String pref, String host, int port, String user, String pass, bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload));
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), bool remotecontrol);
+    void mqtt(const String &host, int port, const String &user, const String &pass, bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, bool remotecontrol);
 
     mqttCallback onConnect;
 
-    void mqtt(String pref, String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload), void (*mqttConnect) (), bool remotecontrol);
-    void mqtt(String pref, String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload), void (*mqttConnect) ());
-    void mqtt(String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload), void (*mqttConnect) ());
-    void mqtt(String host, int port, String user, String pass, void (*mqttFunction) (String topic, String payload), void (*mqttConnect) (), bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
+    void mqtt(const String &pref, const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) ());
+    void mqtt(const String &host, int port, const String &user, const String &pass, void (*mqttFunction) (const String &topic, const String &payload), void (*mqttConnect) (), bool remotecontrol);
 
-    void subscribe(String topic);
-    void publish(String topic, String payload);
-    void publish(String topic, String payload, bool retained);
+    void subscribe(const String &topic);
+    void publish(const String &topic, const String &payload);
+    void publish(const String &topic, const String &payload, bool retained);
 
     void remControl();
 
@@ -124,11 +127,11 @@ class jeeui2
     bool connected = false;
     
 
-    String id(String tpoic);
+    String id(const String &tpoic);
     String m_pref;
 
   private:
-    void arr(String key, String value);
+    void arr(const String &key, const String &value);
     void wifi_connect();
     void button_handle();
     void led_handle();
@@ -145,7 +148,7 @@ class jeeui2
     void btn();
     void getAPmac();
 
-    void pub_mqtt(String key, String value);
+    void pub_mqtt(const String &key, const String &value);
 
     void mqtt_update();
     void mqtt_handle();
