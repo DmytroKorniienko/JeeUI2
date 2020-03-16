@@ -9,7 +9,6 @@ void jeeui2::save()
         serializeJson(cfg, cfg_str);
         deserializeJson(cfg, cfg_str);
         configFile.print(cfg_str);
-        cfg_str = F("");
 
         if(dbg)Serial.println(F("Save Config"));
     }
@@ -49,5 +48,6 @@ void jeeui2::load()
         }
         deserializeJson(cfg, cfg_str);
         if(dbg)Serial.println(F("JSON config loaded"));
+        sv = false;
     }
 }
