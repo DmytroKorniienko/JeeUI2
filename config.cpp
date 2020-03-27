@@ -4,14 +4,16 @@ void jeeui2::save()
 {
     if(SPIFFS.begin()){
         File configFile = SPIFFS.open(F("/config.json"), "w"); // PSTR("w") использовать нельзя, будет исключение!
-        serializeJson(cfg,configFile);
+        // serializeJson(cfg,configFile);
+        // configFile.flush();
+        // configFile.close();
+
+        String cfg_str;
+        serializeJson(cfg, cfg_str);
+        deserializeJson(cfg, cfg_str);
+        configFile.print(cfg_str);
         configFile.flush();
         configFile.close();
-
-        // String cfg_str;
-        // serializeJson(cfg, cfg_str);
-        // deserializeJson(cfg, cfg_str);
-        // configFile.print(cfg_str);
 
         if(dbg)Serial.println(F("Save Config"));
     }
@@ -19,13 +21,26 @@ void jeeui2::save()
 
 void jeeui2::autosave(){
     
-    if (!sv) return;
-    if (sv && astimer + asave < millis()){
+    if (isConfSaved) return;
+    if (!isConfSaved && astimer + asave < millis()){
         save();
-        sv = false;
         if(dbg)Serial.println(F("AutoSave"));
+        astimer = millis();
+        isConfSaved = true; // сохранились
+        //sv = false;
+        //upd();
+        //mqtt_update();
+    } 
+}
+
+void jeeui2::pre_autosave(){
+    if (!sv) return;
+    if (sv && astimer + 1000 < millis()){
         upd();
         mqtt_update();
+        sv = false;
+        isConfSaved = false;
+        astimer = millis(); // обновляем счетчик после последнего изменения UI
     } 
 }
 
@@ -56,6 +71,7 @@ void jeeui2::load()
             return;
         }
         if(dbg)Serial.println(F("JSON config loaded"));
+        configFile.close();
         sv = false;
     }
 }
