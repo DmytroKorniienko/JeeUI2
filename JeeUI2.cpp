@@ -182,6 +182,10 @@ void jeeui2::begin() {
         request->send(SPIFFS, F("/config.json"), String(), true);
     });
 
+    server.on(PSTR("/events_config.json"), HTTP_ANY, [this](AsyncWebServerRequest *request) { 
+        request->send(SPIFFS, F("/events_config.json"), String(), true);
+    });
+
     server.on(PSTR("/js/maker.js"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
         AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/js/maker.js.gz"), F("application/javascript"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
@@ -189,9 +193,16 @@ void jeeui2::begin() {
     });
 
     server.on(PSTR("/"), HTTP_ANY, [this](AsyncWebServerRequest *request) {
+        if(loading) {
+            request->send(500, F("text/plain"), F("Server busy... Try again later"));
+            return;
+        }
         AsyncWebServerResponse* response = request->beginResponse(SPIFFS, F("/index.html.gz"), F("text/html"));
         response->addHeader(F("Content-Encoding"), F("gzip"));
         request->send(response);
+        //if(dbg) Serial.println(F("LOADING BLOCK: index.htm"));
+        tm_loading = millis();
+        loading = true;
     });
 
     server.on(PSTR("/css/pure-min.css"), HTTP_ANY, [this](AsyncWebServerRequest *request) {

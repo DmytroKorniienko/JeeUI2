@@ -49,7 +49,7 @@ class jeeui2
     typedef void (*mqttCallback) ();
 
   public:
-    jeeui2() : cfg(3072), pub_transport(256), btn_transport(128), btn_id(256) {
+    jeeui2() : cfg(4096), pub_transport(256), btn_transport(128), btn_id(256) {
       *ip='\0'; 
       *mc='\0'; 
       *mac='\0'; 
@@ -96,7 +96,8 @@ class jeeui2
     void button(const String &id, const String &color, const String &label);
     void button(const String &id, const String &color, const String &label, int column);
     void textarea(const String &id, const String &label);
-    void save();
+    void save(const char *_cfg = nullptr);
+    void load(const char *_cfg = nullptr);
     void udp(const String &message);
     void udp();
     void pub(const String &id, const String &label);
@@ -138,7 +139,15 @@ class jeeui2
     char mac[18]; // "ff:ff:ff:ff:ff:ff"
     bool _refresh = false;
     bool connected = false;
-    
+
+    bool isLoading() {
+      if(loading && tm_loading+5000<millis()){
+        loading = false;
+        if(dbg) Serial.println(F("LOADING UNBLOCK"));
+        _refresh = true;
+      }
+      return loading;
+    }
 
     String id(const String &tpoic);
     static char m_pref[16]; // префикс MQTT
@@ -146,6 +155,10 @@ class jeeui2
     void setDelayedSave(unsigned int ms) { asave = ms; astimer = millis(); sv=true; } // Отложенное сохранение
 
   private:
+
+    bool loading = true; // признак попытки загрузки начальной страницы index.htm
+    unsigned long tm_loading = millis();
+
     void arr(const String &key, const String &value);
     void wifi_connect();
     void button_handle();
@@ -154,7 +167,6 @@ class jeeui2
     void led_on();
     void led_off();
     void led_inv();
-    void load();
     void autosave();
     void pre_autosave();
     void as();
